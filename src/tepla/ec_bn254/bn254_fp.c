@@ -3,7 +3,7 @@
 //--------------------------------------------------------------
 //  2015.10.31 created by kanbara
 //==============================================================
-
+#include <pthread.h>
 #include "ec_bn254_lcl.h"
 
 #define rep(x)  (*((mpz_t *)x->data))
@@ -349,8 +349,10 @@ int bn254_fp_is_sqr_general(const Element x)
 //-------------------------------------------
 void bn254_fp_random(Element z)
 {
+    static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
     static gmp_randstate_t *state = NULL;
 
+    pthread_mutex_lock(&mutex);
     if (state == NULL)
     {
         state = (gmp_randstate_t *)malloc(sizeof(gmp_randstate_t));
@@ -358,6 +360,7 @@ void bn254_fp_random(Element z)
         gmp_randseed_ui(*state, (int)time(NULL));
     }
     mpz_urandomm(rep(z), *state, order(z));
+    pthread_mutex_unlock(&mutex);
 }
 
 //-------------------------------------------

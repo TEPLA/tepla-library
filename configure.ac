@@ -30,6 +30,9 @@ AC_CHECK_HEADER([gmp.h], [], [AC_MSG_ERROR("cannot find gmp.h")])
 #AC_CHECK_HEADER([openssl/sha.h], [], [AC_MSG_ERROR("cannot find openssl/sha.h")])
 AX_CHECK_OPENSSL([],[AC_MSG_ERROR("Test for library openssl failed")])
 
+# Checks for pthread
+AC_CHECK_LIB([pthread],[main],[],[AC_MSG_ERROR("Test for library pthreads failed.")])
+
 # Checks for header files.
 AC_CHECK_HEADERS([stdio.h stdlib.h string.h])
 
