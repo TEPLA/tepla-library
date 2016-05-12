@@ -1,0 +1,40 @@
+CC = @CC@
+
+LIBS = @LIBS@
+
+SSLINC=@OPENSSL_INCLUDES@
+SSLLIB=@OPENSSL_LIBS@
+SSLLDFLAGS=@OPENSSL_LDFLAGS@
+
+LIBDIR =
+INCDIR = -I../../.. -I../../../include $(SSLINC)
+
+CFLAGS  = @CFLAGS@
+LDFLAGS = @LDFLAGS@
+
+FPIC = -fPIC
+
+OBJS  = bn254_fp.o
+OBJS += bn254_fp2.o
+OBJS += bn254_fp6.o
+OBJS += bn254_fp12.o
+OBJS += ec_bn254_fp.o
+OBJS += ec_bn254_fp2.o
+OBJS += ec_bn254_pairing.o
+OBJS += ec_bn254_lib.o
+
+all: $(OBJS)
+	@echo compiled ec_bn254 functions.
+
+%.o: %.c
+	$(CC) $(FPIC) $(CFLAGS) -c $< $(INCDIR) $(LIBDIR)
+
+check:
+	@echo test for ec_bn254.
+	make -C test/
+	make check -C test/
+
+.PHONY: clean
+clean:
+	$(RM) *~ $(OBJS)
+	make clean -C test/

@@ -1,0 +1,28 @@
+===========================
+ How To Install TEPLA
+===========================
+
+This procedure should work on most Unix or Unix-like platforms
+(including Mac OS X).
+
+To compile TEPLA, you have to install GNU MP and OpenSSL.
+Because of TEPLA use these libraries for foundamental arighmetic opearation.
+Please install and PATH setting of them before compile.
+
+Here are some brief instructions on how to install TEPLA.
+First you need to compile. Since you're impatient, try this
+
+   ./configure
+   make
+   make check
+
+Optionally, you can install the library with the following command.
+This will be to /usr/local by default, and you'll probably need to 
+be "root" to be able to write there.
+
+   make install
+
+You can select install directory using --prefix command.
+
+   ./configure --prefix=[DIR]
+

@@ -1,0 +1,40 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+bindir=@bindir@
+libdir=@libdir@
+includedir=@includedir@
+
+PACKAGE_NAME=@PACKAGE_NAME@
+PACKAGE_VERSION=@PACKAGE_VERSION@
+
+LIBNAME=lib$(PACKAGE_NAME).*
+LIBTYPE=@LIBTYPE@
+
+SSLINC=@OPENSSL_INCLUDES@
+SSLLIB=@OPENSSL_LIBS@
+SSLLDFLAGS=@OPENSSL_LDFLAGS@
+
+INCDIR = include
+SUBDIR = src/tepla
+
+default: tepla
+	@echo compile have been done.
+
+tepla:
+	@echo compiling the tepla.
+	make -C $(SUBDIR)
+
+install:
+	@echo creating the shared library.
+	install -d $(libdir)
+	install -m 755 $(SUBDIR)/$(LIBNAME) $(libdir)
+	install -d $(includedir)
+	cp -r $(INCDIR)/* $(includedir)
+	
+check:
+	@echo test for tepla
+	make check --no-print-directory -C $(SUBDIR)
+
+clean:
+	make clean --no-print-directory -C $(SUBDIR)
+	@echo fin.

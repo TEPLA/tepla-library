@@ -1,0 +1,63 @@
+CC = @CC@
+
+SSLINC=@OPENSSL_INCLUDES@
+SSLLIB=@OPENSSL_LIBS@
+SSLLDFLAGS=@OPENSSL_LDFLAGS@
+
+LIBS = @LIBS@ $(SSLLIB)
+
+LIBDIR =
+INCDIR = -I../../../.. -I../../../../include $(SSLINC)
+
+CFLAGS  = @CFLAGS@
+LDFLAGS  = @LDFLAGS@ $(SSLLDFLAGS)
+
+TESTFP = test_bn254_fp.exe
+TESTFP2 = test_bn254_fp2.exe
+TESTFP6 = test_bn254_fp6.exe
+TESTFP12 = test_bn254_fp12.exe
+TESTEFP = test_ec_bn254_fp.exe
+TESTETW = test_ec_bn254_tw.exe
+TESTPRG = test_ec_bn254_pairing.exe
+
+TESTS  = $(TESTFP)
+TESTS += $(TESTFP2)
+TESTS += $(TESTFP6)
+TESTS += $(TESTFP12)
+TESTS += $(TESTEFP)
+TESTS += $(TESTETW)
+TESTS += $(TESTPRG)
+
+OBJS1  = ec_lib.o hash.o
+OBJS2  = bn254_fp.o
+OBJS2 += bn254_fp2.o
+OBJS2 += bn254_fp6.o
+OBJS2 += bn254_fp12.o
+OBJS2 += ec_bn254_fp.o
+OBJS2 += ec_bn254_fp2.o
+OBJS2 += ec_bn254_pairing.o
+OBJS2 += ec_bn254_lib.o
+
+OBJS  = $(OBJS1:%=../../%)
+OBJS += $(OBJS2:%=../%)
+
+all: $(TESTS)
+
+%.exe: %.o $(OBJS)
+	$(CC) $(LDFLAGS) -o $@ $< $(OBJS) $(INCDIR) $(LIBDIR) $(LIBS)
+
+%.o: %.c
+	$(CC) $(CFLAGS) -c $< $(INCDIR) $(LIBDIR)
+
+check:
+	$(TESTFP:%=./%;)
+	$(TESTFP2:%=./%;)
+	$(TESTFP6:%=./%;)
+	$(TESTFP12:%=./%;)
+	$(TESTEFP:%=./%;)
+	$(TESTETW:%=./%;)
+	$(TESTPRG:%=./%;)
+
+.PHONY: clean
+clean:
+	$(RM) $(TESTFIELD) $(TESTCURVE) $(TESTPAIRING) *~ *.o
