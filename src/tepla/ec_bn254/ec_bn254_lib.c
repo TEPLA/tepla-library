@@ -37,6 +37,103 @@ void set_pairing_name(EC_PAIRING p, const char* name)
     strcpy(p->pairing_name, name);
 }
 
+//----------------------------------------------
+//  function release field "bn254"
+//----------------------------------------------
+void ec_bn254_field_clear(Field f)
+{
+    unsigned int i, j;
+
+    if (f->precomp != NULL)
+    {
+        field_precomp_p precomp = (field_precomp_p)(f->precomp);
+
+        field_precomp_sqrt_p ps = precomp->ps;
+        field_precomp_frob_p pf = precomp->pf;
+
+        if (ps != NULL)
+        {
+            element_clear(ps->n_v);
+            mpz_clear(ps->v);
+            free(ps);
+        }
+
+        if (pf != NULL)
+        {
+            for (i = 0; i < pf->glen1; i++) {
+                element_clear(pf->gamma1[i]);
+            }
+            for (i = 0; i < pf->glen2; i++) {
+                element_clear(pf->gamma2[i]);
+            }
+            for (i = 0; i < pf->glen3; i++) {
+                element_clear(pf->gamma3[i]);
+            }
+            free(pf->gamma1);
+            free(pf->gamma2);
+            free(pf->gamma3);
+            free(pf);
+        }
+        SAFE_FREE(f->precomp);
+    }
+
+    if (f->irre_poly != NULL)
+    {
+        for (i = 0, j = f->irre_poly_num; i < j; i++) {
+            element_clear(f->irre_poly[i]);
+        }
+        f->irre_poly_num = 0;
+        f->irre_poly_deg = 0;
+        SAFE_FREE(f->irre_poly);
+    }
+
+    if (f->tmp != NULL)
+    {
+        for (i = 0; i < TMP_NUM; i++) {
+            element_clear(f->tmp[i]);
+        }
+        SAFE_FREE(f->tmp);
+    }
+
+    if (f->base != NULL)
+    {
+        field_clear(f->base);
+        SAFE_FREE(f->base);
+    }
+
+    mpz_clear(f->order);
+    mpz_clear(f->OP1_1);
+    mpz_clear(f->OP1_2);
+    mpz_clear(f->OP2);
+
+    SAFE_FREE(f->field_name);
+
+    f->str_len = 0;
+    f->oct_len = 0;
+
+    f->init = NULL;
+    f->clear = NULL;
+    f->set = NULL;
+    f->set_str = NULL;
+    f->get_str = NULL;
+    f->set_zero = NULL;
+    f->set_one = NULL;
+    f->add = NULL;
+    f->sub = NULL;
+    f->neg = NULL;
+    f->mul = NULL;
+    f->sqr = NULL;
+    f->inv = NULL;
+    f->pow = NULL;
+    f->sqrt = NULL;
+    f->is_zero = NULL;
+    f->is_one = NULL;
+    f->is_sqr = NULL;
+    f->cmp = NULL;
+    f->random = NULL;
+    f->to_oct = NULL;
+    f->from_oct = NULL;
+}
 
 //----------------------------------------------
 //  function creating field bn254_fpa
@@ -311,6 +408,100 @@ void ec_bn254_fp6a_new(Field f)
 }
 
 //----------------------------------------------
+//  function creating field bn254_fp6a for pairing_init
+//----------------------------------------------
+void ec_bn254_fp6a_new_for_pairing_init(Field f)
+{
+    int i;
+
+    f->type = Field_fpn;
+
+    set_field_name(f, "bn254_fp6a");
+
+    f->ID = bn254_fp6;
+
+    f->str_len = 390;
+    f->oct_len = 190;
+
+    //------------------------------
+    //  set pointer of function
+    //------------------------------
+    f->init     = bn254_fp6_init;
+    f->clear    = bn254_fp6_clear;
+    f->set      = bn254_fp6_set;
+    f->set_str  = bn254_fp6_set_str;
+    f->get_str  = bn254_fp6_get_str;
+    f->set_zero = bn254_fp6_set_zero;
+    f->set_one  = bn254_fp6_set_one;
+
+    f->add  = bn254_fp6_add;
+    f->sub  = bn254_fp6_sub;
+    f->neg  = bn254_fp6_neg;
+    f->mul  = bn254_fp6_mul;
+    f->sqr  = bn254_fp6_sqr;
+    f->inv  = bn254_fp6_inv;
+    f->pow  = bn254_fp2_pow;
+    f->sqrt = bn254_fp2_sqrt;
+
+    f->is_zero = bn254_fp6_is_zero;
+    f->is_one  = bn254_fp6_is_one;
+    f->is_sqr  = bn254_fp6_is_sqr;
+
+    f->cmp = bn254_fp6_cmp;
+
+    f->random = bn254_fp6_random;
+
+    f->to_oct   = bn254_fp6_to_oct;
+    f->from_oct = bn254_fp6_from_oct;
+
+    //-----------------------------------------
+    //  set base field
+    //-----------------------------------------
+    f->base = (struct ec_field_st *)malloc(sizeof(struct ec_field_st));
+    field_init(f->base, "bn254_fp2a");
+
+    //-----------------------------------------
+    //  characteristic of prime field
+    //-----------------------------------------
+    //    p = 36t^4 + 36t^3 + 24t^2 + 6t + 1
+    //    t = 2^62 - 2^54 + 2^44
+    //-----------------------------------------
+    mpz_init(f->order);
+    mpz_mul(f->order, f->base->order, f->base->order);
+    mpz_mul(f->order, f->order, f->base->order);
+
+    mpz_init_set_str(f->OP1_1, "0", 16);
+    mpz_init_set_str(f->OP1_2, "0", 16);
+    mpz_init_set_str(f->OP2, "0", 16);
+
+    //-----------------------------------------
+    //  irreducible polynomial: y^3 - x
+    //-----------------------------------------
+    f->irre_poly_num = 1;
+    f->irre_poly_deg = 3;
+
+    f->irre_poly = (Element *)malloc(sizeof(Element));
+
+    element_init(f->irre_poly[0], f->base);
+    element_set_str(f->irre_poly[0], "0 -1");
+
+    //-----------------------------------------
+    //  pre-computation for square root
+    //-----------------------------------------
+    bn254_fp6_precomp_for_pairing_init(f);
+
+    //----------------------------------
+    //  temporary element init
+    //----------------------------------
+    f->tmp = (Element *)malloc(sizeof(Element) * TMP_NUM);
+    for (i = 0; i < TMP_NUM; i++) {
+        element_init(f->tmp[i], f);
+    }
+
+    return;
+}
+
+//----------------------------------------------
 //  function creating field bn254_fp12a
 //----------------------------------------------
 void ec_bn254_fp12a_new(Field f)
@@ -360,7 +551,6 @@ void ec_bn254_fp12a_new(Field f)
     //  set base field
     //-----------------------------------------
     f->base = (struct ec_field_st *)malloc(sizeof(struct ec_field_st));
-
     field_init(f->base, "bn254_fp6a");
 
     //-----------------------------------------
@@ -371,7 +561,7 @@ void ec_bn254_fp12a_new(Field f)
     //-----------------------------------------
     mpz_init(f->order);
     mpz_mul(f->order, f->base->order, f->base->order);
-
+        
     mpz_init_set_str(f->OP1_1, "0", 16);
     mpz_init_set_str(f->OP1_2, "0", 16);
     mpz_init_set_str(f->OP2, "0", 16);
@@ -391,6 +581,100 @@ void ec_bn254_fp12a_new(Field f)
     //  pre-computation for square root
     //-----------------------------------------
     bn254_fp12_precomp(f);
+
+    //----------------------------------
+    //  temporary element init
+    //----------------------------------
+    f->tmp = (Element *)malloc(sizeof(Element) * TMP_NUM);
+    for (i = 0; i < TMP_NUM; i++) {
+        element_init(f->tmp[i], f);
+    }
+
+    return;
+}
+
+//----------------------------------------------
+//  function creating field bn254_fp12a_for_pairing_init
+//----------------------------------------------
+void ec_bn254_fp12a_new_for_pairing_init(Field f)
+{
+    int i;
+
+    f->type = Field_fpn;
+
+    set_field_name(f, "bn254_fp12a");
+
+    f->ID = bn254_fp12;
+
+    f->str_len = 780;
+    f->oct_len = 380;
+
+    //------------------------------
+    //  set pointer of function
+    //------------------------------
+    f->init     = bn254_fp12_init;
+    f->clear    = bn254_fp12_clear;
+    f->set      = bn254_fp12_set;
+    f->set_str  = bn254_fp12_set_str;
+    f->get_str  = bn254_fp12_get_str;
+    f->set_zero = bn254_fp12_set_zero;
+    f->set_one  = bn254_fp12_set_one;
+
+    f->add  = bn254_fp12_add;
+    f->sub  = bn254_fp12_sub;
+    f->neg  = bn254_fp12_neg;
+    f->mul  = bn254_fp12_mul;
+    f->sqr  = bn254_fp12_sqr;
+    f->inv  = bn254_fp12_inv;
+    f->pow  = bn254_fp12_pow_naf;
+    f->sqrt = bn254_fp2_sqrt;
+
+    f->is_zero = bn254_fp12_is_zero;
+    f->is_one  = bn254_fp12_is_one;
+    f->is_sqr  = bn254_fp12_is_sqr;
+    f->cmp     = bn254_fp12_cmp;
+
+    f->random = bn254_fp12_random;
+
+    f->to_oct   = bn254_fp12_to_oct;
+    f->from_oct = bn254_fp12_from_oct;
+
+    //-----------------------------------------
+    //  set base field
+    //-----------------------------------------
+    f->base = (struct ec_field_st *)malloc(sizeof(struct ec_field_st));
+    ec_bn254_fp6a_new_for_pairing_init(f->base);
+    f->base->field_init  = ec_bn254_fp6a_new;
+    f->base->field_clear = ec_bn254_field_clear;
+
+    //-----------------------------------------
+    //  characteristic of prime field
+    //-----------------------------------------
+    //    p = 36t^4 + 36t^3 + 24t^2 + 6t + 1
+    //    t = 2^62 - 2^54 + 2^44
+    //-----------------------------------------
+    mpz_init(f->order);
+    mpz_mul(f->order, f->base->order, f->base->order);
+        
+    mpz_init_set_str(f->OP1_1, "0", 16);
+    mpz_init_set_str(f->OP1_2, "0", 16);
+    mpz_init_set_str(f->OP2, "0", 16);
+
+    //-----------------------------------------
+    //  irreducible polynomial: z^2 - y
+    //-----------------------------------------
+    f->irre_poly_num = 1;
+    f->irre_poly_deg = 2;
+
+    f->irre_poly = (Element *)malloc(sizeof(Element));
+
+    element_init(f->irre_poly[0], f->base);
+    element_set_str(f->irre_poly[0], "0 -1 0 0 0 0");
+
+    //-----------------------------------------
+    //  pre-computation for square root
+    //-----------------------------------------
+    bn254_fp12_precomp_for_pairing_init(f);
 
     //----------------------------------
     //  temporary element init
@@ -677,6 +961,101 @@ void ec_bn254_fp6b_new(Field f)
 }
 
 //----------------------------------------------
+//  function creating field bn254_fp6b for pairing_init
+//----------------------------------------------
+void ec_bn254_fp6b_new_for_pairing_init(Field f)
+{
+    int i;
+
+    f->type = Field_fpn;
+
+    set_field_name(f, "bn254_fp6b");
+
+    f->ID = bn254_fp6;
+
+    f->str_len = 390;
+    f->oct_len = 190;
+
+    //------------------------------
+    //  set pointer of function
+    //------------------------------
+    f->init     = bn254_fp6_init;
+    f->clear    = bn254_fp6_clear;
+    f->set      = bn254_fp6_set;
+    f->set_str  = bn254_fp6_set_str;
+    f->get_str  = bn254_fp6_get_str;
+    f->set_zero = bn254_fp6_set_zero;
+    f->set_one  = bn254_fp6_set_one;
+
+    f->add  = bn254_fp6_add;
+    f->sub  = bn254_fp6_sub;
+    f->neg  = bn254_fp6_neg;
+    f->mul  = bn254_fp6_mul;
+    f->sqr  = bn254_fp6_sqr;
+    f->inv  = bn254_fp6_inv;
+    f->pow  = bn254_fp2_pow;
+    f->sqrt = bn254_fp2_sqrt;
+
+    f->is_zero = bn254_fp6_is_zero;
+    f->is_one  = bn254_fp6_is_one;
+    f->is_sqr  = bn254_fp6_is_sqr;
+
+    f->cmp = bn254_fp6_cmp;
+
+    f->random = bn254_fp6_random;
+
+    f->to_oct   = bn254_fp6_to_oct;
+    f->from_oct = bn254_fp6_from_oct;
+
+    //-----------------------------------------
+    //  set base field
+    //-----------------------------------------
+    f->base = (struct ec_field_st *)malloc(sizeof(struct ec_field_st));
+
+    field_init(f->base, "bn254_fp2b");
+
+    //-----------------------------------------
+    //  characteristic of prime field
+    //-----------------------------------------
+    //    p = 36t^4 + 36t^3 + 24t^2 + 6t + 1
+    //    t = - (2^62 + 2^55 + 1)
+    //-----------------------------------------
+    mpz_init(f->order);
+    mpz_mul(f->order, f->base->order, f->base->order);
+    mpz_mul(f->order, f->order, f->base->order);
+
+    mpz_init_set_str(f->OP1_1, "0", 16);
+    mpz_init_set_str(f->OP1_2, "0", 16);
+    mpz_init_set_str(f->OP2, "0", 16);
+
+    //-----------------------------------------
+    //  irreducible polynomial: y^3 - (x + 1)
+    //-----------------------------------------
+    f->irre_poly_num = 1;
+    f->irre_poly_deg = 3;
+
+    f->irre_poly = (Element *)malloc(sizeof(Element));
+
+    element_init(f->irre_poly[0], f->base);
+    element_set_str(f->irre_poly[0], "-1 -1");
+
+    //-----------------------------------------
+    //  pre-computation for square root
+    //-----------------------------------------
+    bn254_fp6_precomp_for_pairing_init(f);
+
+    //----------------------------------
+    //  temporary element init
+    //----------------------------------
+    f->tmp = (Element *)malloc(sizeof(Element) * TMP_NUM);
+    for (i = 0; i < TMP_NUM; i++) {
+        element_init(f->tmp[i], f);
+    }
+
+    return;
+}
+
+//----------------------------------------------
 //  function creating field bn254_fp12b
 //----------------------------------------------
 void ec_bn254_fp12b_new(Field f)
@@ -770,102 +1149,101 @@ void ec_bn254_fp12b_new(Field f)
 }
 
 //----------------------------------------------
-//  function release field "bn254"
+//  function creating field bn254_fp12b _for_pairing_init
 //----------------------------------------------
-void ec_bn254_field_clear(Field f)
+void ec_bn254_fp12b_new_for_pairing_init(Field f)
 {
-    unsigned int i, j;
+    int i;
 
-    if (f->precomp != NULL)
-    {
-        field_precomp_p precomp = (field_precomp_p)(f->precomp);
+    f->type = Field_fpn;
 
-        field_precomp_sqrt_p ps = precomp->ps;
-        field_precomp_frob_p pf = precomp->pf;
+    set_field_name(f, "bn254_fp12b");
 
-        if (ps != NULL)
-        {
-            element_clear(ps->n_v);
-            mpz_clear(ps->v);
-            free(ps);
-        }
+    f->ID = bn254_fp12;
 
-        if (pf != NULL)
-        {
-            for (i = 0; i < pf->glen1; i++) {
-                element_clear(pf->gamma1[i]);
-            }
-            for (i = 0; i < pf->glen2; i++) {
-                element_clear(pf->gamma2[i]);
-            }
-            for (i = 0; i < pf->glen3; i++) {
-                element_clear(pf->gamma3[i]);
-            }
-            free(pf->gamma1);
-            free(pf->gamma2);
-            free(pf->gamma3);
-            free(pf);
-        }
-        SAFE_FREE(f->precomp);
+    f->str_len = 780;
+    f->oct_len = 380;
+
+    //------------------------------
+    //  set pointer of function
+    //------------------------------
+    f->init     = bn254_fp12_init;
+    f->clear    = bn254_fp12_clear;
+    f->set      = bn254_fp12_set;
+    f->set_str  = bn254_fp12_set_str;
+    f->get_str  = bn254_fp12_get_str;
+    f->set_zero = bn254_fp12_set_zero;
+    f->set_one  = bn254_fp12_set_one;
+
+    f->add  = bn254_fp12_add;
+    f->sub  = bn254_fp12_sub;
+    f->neg  = bn254_fp12_neg;
+    f->mul  = bn254_fp12_mul;
+    f->sqr  = bn254_fp12_sqr;
+    f->inv  = bn254_fp12_inv;
+    f->pow  = bn254_fp12_pow_naf;
+    f->sqrt = bn254_fp2_sqrt;
+
+    f->is_zero = bn254_fp12_is_zero;
+    f->is_one  = bn254_fp12_is_one;
+    f->is_sqr  = bn254_fp12_is_sqr;
+    f->cmp     = bn254_fp12_cmp;
+
+    f->random = bn254_fp12_random;
+
+    f->to_oct   = bn254_fp12_to_oct;
+    f->from_oct = bn254_fp12_from_oct;
+
+    //-----------------------------------------
+    //  set base field
+    //-----------------------------------------
+    f->base = (struct ec_field_st *)malloc(sizeof(struct ec_field_st));
+    ec_bn254_fp6b_new_for_pairing_init(f->base);
+    f->base->field_init  = ec_bn254_fp6b_new;
+    f->base->field_clear = ec_bn254_field_clear;
+    
+
+    //-----------------------------------------
+    //  characteristic of prime field
+    //-----------------------------------------
+    //    p = 36t^4 + 36t^3 + 24t^2 + 6t + 1
+    //    t = - (2^62 + 2^55 + 1)
+    //-----------------------------------------
+    mpz_init(f->order);
+    mpz_mul(f->order, f->base->order, f->base->order);
+
+    mpz_init_set_str(f->OP1_1, "0", 16);
+    mpz_init_set_str(f->OP1_2, "0", 16);
+    mpz_init_set_str(f->OP2, "0", 16);
+
+    //-----------------------------------------
+    //  irreducible polynomial: z^2 - y
+    //-----------------------------------------
+    f->irre_poly_num = 1;
+    f->irre_poly_deg = 2;
+
+    f->irre_poly = (Element *)malloc(sizeof(Element));
+
+    element_init(f->irre_poly[0], f->base);
+    element_set_str(f->irre_poly[0], "0 -1 0 0 0 0");
+
+    //-----------------------------------------
+    //  pre-computation for square root
+    //-----------------------------------------
+    bn254_fp12_precomp_for_pairing_init(f);
+
+    //----------------------------------
+    //  temporary element init
+    //----------------------------------
+    f->tmp = (Element *)malloc(sizeof(Element) * TMP_NUM);
+    for (i = 0; i < TMP_NUM; i++) {
+        element_init(f->tmp[i], f);
     }
 
-    if (f->irre_poly != NULL)
-    {
-        for (i = 0, j = f->irre_poly_num; i < j; i++) {
-            element_clear(f->irre_poly[i]);
-        }
-        f->irre_poly_num = 0;
-        f->irre_poly_deg = 0;
-        SAFE_FREE(f->irre_poly);
-    }
-
-    if (f->tmp != NULL)
-    {
-        for (i = 0; i < TMP_NUM; i++) {
-            element_clear(f->tmp[i]);
-        }
-        SAFE_FREE(f->tmp);
-    }
-
-    if (f->base != NULL)
-    {
-        field_clear(f->base);
-        SAFE_FREE(f->base);
-    }
-
-    mpz_clear(f->order);
-    mpz_clear(f->OP1_1);
-    mpz_clear(f->OP1_2);
-    mpz_clear(f->OP2);
-
-    SAFE_FREE(f->field_name);
-
-    f->str_len = 0;
-    f->oct_len = 0;
-
-    f->init = NULL;
-    f->clear = NULL;
-    f->set = NULL;
-    f->set_str = NULL;
-    f->get_str = NULL;
-    f->set_zero = NULL;
-    f->set_one = NULL;
-    f->add = NULL;
-    f->sub = NULL;
-    f->neg = NULL;
-    f->mul = NULL;
-    f->sqr = NULL;
-    f->inv = NULL;
-    f->pow = NULL;
-    f->sqrt = NULL;
-    f->is_zero = NULL;
-    f->is_one = NULL;
-    f->is_sqr = NULL;
-    f->cmp = NULL;
-    f->random = NULL;
-    f->to_oct = NULL;
-    f->from_oct = NULL;
+    return;
 }
+
+
 
 //----------------------------------------------
 //  function generating elliptic curve method
@@ -1125,8 +1503,10 @@ void ec_bn254_pairing_a_new(EC_PAIRING p)
     curve_init(p->g1, "ec_bn254_fpa");
     curve_init(p->g2, "ec_bn254_twa");
 
-    field_init(p->g3, "bn254_fp12a");
-
+    ec_bn254_fp12a_new_for_pairing_init(p->g3);
+    p->g3->field_init  = ec_bn254_fp12a_new;
+    p->g3->field_clear = ec_bn254_field_clear;
+    
     ec_bn254_pairing_precomp_beuchat(p);
 }
 
@@ -1142,7 +1522,9 @@ void ec_bn254_pairing_b_new(EC_PAIRING p)
     curve_init(p->g1, "ec_bn254_fpb");
     curve_init(p->g2, "ec_bn254_twb");
 
-    field_init(p->g3, "bn254_fp12b");
+    ec_bn254_fp12b_new_for_pairing_init(p->g3);
+    p->g3->field_init  = ec_bn254_fp12b_new;
+    p->g3->field_clear = ec_bn254_field_clear;
 
     ec_bn254_pairing_precomp_aranha(p);
 }

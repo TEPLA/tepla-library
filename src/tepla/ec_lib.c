@@ -9,6 +9,10 @@
 
 #include <tepla/ec.h>
 
+//for debug
+#include <time.h>
+//--for debug
+
 #include "ec_bn254/ec.h"
 
 #ifndef TRUE

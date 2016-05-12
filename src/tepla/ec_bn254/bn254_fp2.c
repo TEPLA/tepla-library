@@ -441,6 +441,7 @@ void bn254_fp2_precomp_sqrt(field_precomp_sqrt_p ps, const Field f)
     //    (p^2-1) = 2^e * v
     //-----------------------------
     mpz_init_set(ps->v, f->order);
+
     mpz_sub_ui(ps->v, ps->v, 1);
     ps->e = (int)mpz_scan1(ps->v, 0);
     mpz_fdiv_q_2exp(ps->v, ps->v, ps->e);
@@ -454,7 +455,52 @@ void bn254_fp2_precomp_sqrt(field_precomp_sqrt_p ps, const Field f)
         element_random(ps->n_v);
     }
     while (element_is_sqr(ps->n_v));
+
     element_pow(ps->n_v, ps->n_v, ps->v);
+}
+
+//---------------------------------------------------------
+//  precomputation for sqrt in pairing_init 
+//---------------------------------------------------------
+void bn254_fp2_precomp_sqrt_for_fp12init(field_precomp_sqrt_p ps, const Field f)
+{
+
+    //-----------------------------
+    //  decompose of value
+    //    (p^2-1) = 2^e * v
+    //-----------------------------
+    mpz_init_set(ps->v, f->order);
+    mpz_sub_ui(ps->v, ps->v, 1);
+    ps->e = (int)mpz_scan1(ps->v, 0);
+    mpz_fdiv_q_2exp(ps->v, ps->v, ps->e);
+
+    //----------------------------------
+    //  n_v = n^v :
+    //    n is some integer (n/p) = -1
+    //----------------------------------
+    element_init(ps->n_v, f);
+    element_set_str(ps->n_v, "0 0 0 0 0 0 0 0 0 0 1bba9d61d6bb0a4d178b1b68a0166bd6770e45f55f599b3dc44fc97ce02ca2c1 0");
+}
+
+
+void bn254_fp2_precomp_sqrt_for_fp6init(field_precomp_sqrt_p ps, const Field f)
+{
+
+    //-----------------------------
+    //  decompose of value
+    //    (p^2-1) = 2^e * v
+    //-----------------------------
+    mpz_init_set(ps->v, f->order);
+    mpz_sub_ui(ps->v, ps->v, 1);
+    ps->e = (int)mpz_scan1(ps->v, 0);
+    mpz_fdiv_q_2exp(ps->v, ps->v, ps->e);
+
+    //----------------------------------
+    //  n_v = n^v :
+    //    n is some integer (n/p) = -1
+    //----------------------------------
+    element_init(ps->n_v, f);
+    element_set_str(ps->n_v, "23dfc9d1a39f4db8c69b87a8848aa075a7333a0e62d78cbf4b1b8eeae58b81c5 0 0 1439ab09c60b248f398c5d77b755f92b9edc5f19d2873545be471151a747e4e 0 0");
 }
 
 //---------------------------------------------------------

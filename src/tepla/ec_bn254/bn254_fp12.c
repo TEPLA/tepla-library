@@ -889,7 +889,36 @@ void bn254_fp12_precomp(Field f)
     precomp = (field_precomp_p)malloc(sizeof(struct ec_field_precomp_st));
 
     precomp->ps = (field_precomp_sqrt_p)malloc(sizeof(struct ec_field_precomp_sqrt_st));
+
     bn254_fp2_precomp_sqrt(precomp->ps, f);
+    
+    precomp->pf = (field_precomp_frob_p)malloc(sizeof(struct ec_field_precomp_frob_st));
+
+    if (strcmp(f->field_name, "bn254_fp12a") == 0)
+    {
+        bn254_fp12_precomp_frob_beuchat(precomp->pf, f);
+    }
+
+    if (strcmp(f->field_name, "bn254_fp12b") == 0)
+    {
+        bn254_fp12_precomp_frob_aranha(precomp->pf, f);
+    }
+
+    f->precomp = (void *)precomp;
+}
+
+//---------------------------------------------------------
+// precomputation for Fp12 operation for pairing_init
+//---------------------------------------------------------
+void bn254_fp12_precomp_for_pairing_init(Field f)
+{
+    field_precomp_p precomp = NULL;
+
+    precomp = (field_precomp_p)malloc(sizeof(struct ec_field_precomp_st));
+
+    precomp->ps = (field_precomp_sqrt_p)malloc(sizeof(struct ec_field_precomp_sqrt_st));
+
+    bn254_fp2_precomp_sqrt_for_fp12init(precomp->ps, f);
 
     precomp->pf = (field_precomp_frob_p)malloc(sizeof(struct ec_field_precomp_frob_st));
 
