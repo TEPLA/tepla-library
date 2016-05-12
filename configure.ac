@@ -1,8 +1,8 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-AC_PREREQ([2.68])
-AC_INIT(tepla, 1.0, tepla-admin@cipher.risk.tsukuba.ac.jp)
+AC_PREREQ([2.69])
+AC_INIT(tepla, 2.0, tepla-admin@cipher.risk.tsukuba.ac.jp)
 
 m4_include([m4/ax_check_openssl.m4])
 
@@ -10,7 +10,7 @@ AC_CONFIG_SRCDIR([src/tepla/hash.c])
 AC_CONFIG_HEADERS([config.h])
 
 if test "" = "$CFLAGS"; then
-   CFLAGS="-Wall -Wextra -pedantic -g -O4 -std=c99"
+   CFLAGS="-Wall -Wextra -pedantic -g -O3 -std=c11"
 fi
 
 if test "" = "x$LDFLAGS"; then

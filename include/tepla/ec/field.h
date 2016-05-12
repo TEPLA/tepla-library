@@ -1,19 +1,23 @@
 //===================================================
 //  Elliptic curve operation
 //
-//   2012.09.14 - 2012.09.xx
+//   2015.xx.xx
 //===================================================
 #pragma once
 
 #include <gmp.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 //---------------------------------------------------
 // Field type
 //---------------------------------------------------
 typedef enum fieldtype
 {
-	Field_fp,   // prime field
-	Field_fpn,  // extension field
+    Field_fp,   // prime field
+    Field_fpn,  // extension field
 
 } FieldType;
 
@@ -22,8 +26,8 @@ typedef enum fieldtype
 //---------------------------------------------------
 typedef struct ec_element_st
 {
-	const struct ec_field_st *field;
-	void* data;
+    const struct ec_field_st *field;
+    void* data;
 
 } Element[1];
 
@@ -32,58 +36,62 @@ typedef struct ec_element_st
 //---------------------------------------------------
 typedef struct ec_field_st
 {
-	FieldType type;
+    FieldType type;
 
-	char* field_name;
+    char* field_name;
 
-	int ID;
+    int ID;
 
-	int str_len;
-	int oct_len;
+    int str_len;
+    int oct_len;
 
-	void (*field_init)(struct ec_field_st *f);
-	void (*field_clear)(struct ec_field_st *f);
+    void (*field_init)(struct ec_field_st *f);
+    void (*field_clear)(struct ec_field_st *f);
 
-	void (*init)(Element x);
-	void (*clear)(Element x);
+    void (*init)(Element x);
+    void (*clear)(Element x);
 
-	void (*set)(Element x, const Element y);
-	void (*set_str)(Element x, const char *str);
-	void (*get_str)(char *str, const Element x);
-	void (*set_zero)(Element x);
-	void (*set_one)(Element x);
-	
-	void (*add)(Element z, const Element x, const Element y);
-	void (*neg)(Element z, const Element x);
-	void (*sub)(Element z, const Element x, const Element y);
-	void (*mul)(Element z, const Element x, const Element y);
-	void (*sqr)(Element z, const Element x);
-	void (*inv)(Element z, const Element x);
-	void (*pow)(Element z, const Element x, const mpz_t exp);
-	int  (*sqrt)(Element z, const Element x);
-	
-	int  (*is_zero)(const Element x);
-	int  (*is_one)(const Element x);
-	int  (*is_sqr)(const Element x);
-	int  (*cmp)(const Element x, const Element y);
-	
-	void (*random)(Element x);
-	
-	void (*to_oct)(unsigned char *os, size_t *size, const Element x);
-	void (*from_oct)(Element z, const unsigned char *os, const size_t size);
+    void (*set)(Element x, const Element y);
+    void (*set_str)(Element x, const char *str);
+    void (*get_str)(char *str, const Element x);
+    void (*set_zero)(Element x);
+    void (*set_one)(Element x);
 
-	mpz_t  order; // order of field (prime or prime power)
+    void (*add)(Element z, const Element x, const Element y);
+    void (*neg)(Element z, const Element x);
+    void (*sub)(Element z, const Element x, const Element y);
+    void (*mul)(Element z, const Element x, const Element y);
+    void (*sqr)(Element z, const Element x);
+    void (*inv)(Element z, const Element x);
+    void (*pow)(Element z, const Element x, const mpz_t exp);
+    int (*sqrt)(Element z, const Element x);
 
-	int  irre_poly_deg; // degree of irreducible polynomial
-	int  irre_poly_num; // number of irreducible polynomial element
-	
-	Element *irre_poly;	// represent irreducible polynomial
+    int (*is_zero)(const Element x);
+    int (*is_one)(const Element x);
+    int (*is_sqr)(const Element x);
+    int (*cmp)(const Element x, const Element y);
 
-	void *precomp; // values of precomputation
+    void (*random)(Element x);
 
-	Element *tmp;  // temporary elements for computation
+    void (*to_oct)(unsigned char *os, size_t *size, const Element x);
+    void (*from_oct)(Element z, const unsigned char *os, const size_t size);
 
-	struct ec_field_st *base; // pointer of base field
+    mpz_t order; // order of field (prime or prime power)
+
+    mpz_t OP1_1;
+    mpz_t OP1_2;
+    mpz_t OP2;
+
+    int irre_poly_deg; // degree of irreducible polynomial
+    int irre_poly_num; // number of irreducible polynomial element
+
+    Element *irre_poly;	// represent irreducible polynomial
+
+    void *precomp; // values of precomputation
+
+    Element *tmp;  // temporary elements for computation
+
+    struct ec_field_st *base; // pointer of base field
 
 } Field[1];
 
@@ -127,3 +135,9 @@ void element_from_oct(Element z, const unsigned char *os, size_t size);
 
 int  element_get_str_length(const Element x);
 int  element_get_oct_length(const Element x);
+
+void element_print(const Element x);
+
+#ifdef __cplusplus
+}
+#endif

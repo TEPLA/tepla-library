@@ -1,8 +1,8 @@
 =============================================================
- University of Tsukuba Elliptic Curve and Pairing Library
+ TEPLA Elliptic Curve and Pairing Library
 =============================================================
 
-TEPLA(University of Tsukuba Elliptic Curve and Pairing Library) is a
+TEPLA (TEPLA Elliptic Curve and Pairing Library) is a
 free C library providing functions required to develop pairing based
 cryptographis systems. The aim of TEPLA is to provide a library which
 can be used in various platform.

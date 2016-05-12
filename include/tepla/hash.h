@@ -2,6 +2,10 @@
 
 #include <gmp.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 //------------------------------------------------------------------
 //  The Function IHF1
 //------------------------------------------------------------------
@@ -29,3 +33,7 @@ void IHF1_SHA(mpz_t v, const unsigned char *s, size_t slen, const mpz_t n, int t
 //	A size of d
 //------------------------------------------------------------------
 void mIHF_SHA(unsigned char *d, size_t *dlen, const char *s, size_t slen, int t);
+
+#ifdef __cplusplus
+}
+#endif
